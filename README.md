@@ -1,1 +1,2 @@
-# SimChat-java--v-
+# SimChat
+springboot + vue
