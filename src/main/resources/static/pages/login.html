@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+
+    <!--引入js-->
+    <script src="../js/vue.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <!--引入element-ui-->
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../plugins/element-ui/lib/index.js"></script>
+
+    <script src="../js/axios-0.18.0.js"></script>
+
+</head>
+<body>
+<div id="app">
+
+    <el-container>
+        <el-header>SimChat</el-header>
+        <!--主体内容-->
+        <el-main>
+
+
+            <el-row>
+                <el-col :span="8" :offset="8">
+                    <div id="loginBox">
+                        用户登录<br>
+                        账号：<el-input v-model="adminUser.username" placeholder="账号"></el-input><br>
+                        密码：<el-input type="password" v-model="adminUser.password" placeholder="密码"></el-input><br>
+
+                        <el-button type="primary" @click="reset">重置</el-button>
+                        <el-button type="primary" @click="login">登录</el-button>
+                        <el-link type="primary" href="register.html">注册</el-link>
+                    </div>
+                </el-col>
+            </el-row>
+
+
+        </el-main>
+<!--        <el-footer>Copyright © 2022xxxx all rights reserved</el-footer>-->
+    </el-container>
+
+
+
+</div>
+
+
+
+</body>
+</html>
+
+<style>
+    /*整体样式*/
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    body,html,.el-container,#app{
+        height: 100%;
+    }
+
+    /*放账号密码input的div*/
+    #loginBox{
+        background-color: #eee;
+        border-radius: 15px;
+        margin-top: 15%;
+    }
+
+    /*布局容器样式 main header fotter*/
+    .el-header {
+        background-color:deepskyblue;
+        color: #fff;
+        text-align: center;
+        line-height: 60px;
+        font-size: xx-large;
+        font-weight: bolder;
+
+    }
+    .el-footer{
+        background-color: #bbb;
+        color: #000;
+        text-align: center;
+        line-height: 60px;
+
+    }
+    .el-main {
+        background-color: #fff;
+        color: #333;
+        text-align: center;
+        line-height: 80px;
+
+    }
+
+    /*    输入框样式*/
+    .el-input{
+        width: 50%;
+    }
+
+</style>
+
+<script>
+    var app=new Vue({
+        el:"#app",
+        data:{
+            adminUser:{},
+
+        },
+        methods:{
+            reset(){//重置
+                this.adminUser={};
+            },
+            login(){//点击登录按钮后发送ajax请求给后端进行账号密码比对
+                console.log(this.adminUser);
+                if(this.adminUser.username == null || this.adminUser.password == null) {
+                    this.$message.error("用户名或密码不能为空")
+                }
+                else {
+                    axios.post("/users/login", this.adminUser).then((res=>{
+                        if(res.data.code == 20011) {
+                            window.location.href = "chat.html";
+                        } else if(res.data.code == 50010){
+                            this.$message.error(res.data.msg);
+                        } else {
+                            this.$message.error("系统繁忙");
+                        }
+                    }))
+                }
+            }
+        }
+    });
+
+</script>

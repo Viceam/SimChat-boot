@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天</title>
+
+    <!--引入js-->
+    <script src="../js/vue.js"></script>
+    <script src="../js/jquery.min.js"></script>
+    <!--引入element-ui-->
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="../plugins/element-ui/lib/index.js"></script>
+
+    <script src="../js/axios-0.18.0.js"></script>
+
+</head>
+<body>
+<div id="app">
+
+    <el-container>
+        <el-header>欢迎，{{username}}</el-header>
+        <!--主体内容-->
+        <el-main>
+            <form onSubmit="return false;">
+                <h3>聊天室</h3>
+                <textarea id="responseText" style="width: 1024px;height: 300px;"></textarea>
+                <br>
+                <el-input v-model="msg" placeholder="请输入消息"></el-input>
+                <el-button type="primary" @click="send()" round>发送</el-button>
+            </form>
+
+
+
+        </el-main>
+        <!--        <el-footer>Copyright © 2022xxxx all rights reserved</el-footer>-->
+    </el-container>
+
+
+
+</div>
+
+
+
+</body>
+</html>
+
+<style>
+    /*整体样式*/
+    *{
+        margin: 0;
+        padding: 0;
+    }
+    body,html,.el-container,#app{
+        height: 100%;
+    }
+
+
+    .el-header {
+        background-color:deepskyblue;
+        color: #fff;
+        text-align: center;
+        line-height: 60px;
+        font-size: xx-large;
+        font-weight: bolder;
+
+    }
+    .el-main {
+        background-color: #fff;
+        color: #333;
+        text-align: center;
+        line-height: 80px;
+
+    }
+
+    /*    输入框样式*/
+    .el-input{
+        width: 50%;
+    }
+
+</style>
+
+<script>
+    var app=new Vue({
+        el:"#app",
+        data:{
+            username:"",
+            msg:"",
+            websocket:null
+        },
+        mounted: function () {
+            axios.get("/users/name").then((res)=>{
+                this.username = res.data;
+                this.connectWebSocket();
+            });
+        },
+        create() {
+            window.addEventListener('beforeunload', e => this.beforeunloadFn(e))
+        },
+        destroy() {
+            window.removeEventListener('beforeunload', e => this.beforeunloadFn(e))
+        },
+        methods:{
+            connectWebSocket() {
+                axios.get("/users/" + this.username).then((res)=>{
+                    if(res.data == 10000) {
+                        let url = "ws://localhost:8080/websocket/" + this.username;
+                        if ('WebSocket'in window) {
+                            this.websocket = new WebSocket(url);
+                        } else {
+                            alert('Not support websocket')
+                        }
+
+                        //连接发生错误的回调方法
+                        this.websocket.onerror = function() {
+                            this.$message.error("连接失败，请重试");
+                        };
+                        //连接成功建立的回调方法
+                        this.websocket.onopen = function(event) {
+                            let ta = document.getElementById('responseText');
+                            ta.value += "建立 websocket 连接... \r\n";
+                        }
+                        //接收到消息的回调方法
+                        this.websocket.onmessage = function(event) {
+                            let ta = document.getElementById('responseText');
+                            ta.value += event.data+"\r\n";
+                        }
+                        //连接关闭的回调方法
+                        this.websocket.onclose = function() {
+                            let ta = document.getElementById('responseText');
+                            ta.value += "用户["+this.username+"] 已经离开聊天室! \r\n";
+                            ta.value += "关闭 websocket 连接. \r\n";
+                        }
+                        //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+                        window.onbeforeunload = function() {
+                            this.websocket.close();
+                        }
+                    } else {
+                        alert("重复连接已拦截，此页面无效，请勿重复建立连接");
+                    }
+                });
+
+            },
+            send() {
+                if(this.msg == "") {
+                    this.$message.error("消息不能为空");
+                    return;
+                }
+                if(!window.WebSocket){return;}
+                if(this.websocket.readyState == WebSocket.OPEN){
+                    this.websocket.send(this.msg);
+                    this.msg="";
+                }else{
+                    alert("WebSocket 连接没有建立成功！");
+                }
+            },
+            beforeunloadFn(e) {
+                //监听页面刷新
+               this.websocket.close();
+            }
+        }
+    });
+
+</script>
